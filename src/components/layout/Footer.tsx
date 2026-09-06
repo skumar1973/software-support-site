@@ -1,4 +1,5 @@
 import Container from "../ui/Container";
+import VisitorCounter from "../../components/VisitorCounter";
 
 export default function Footer() {
   const year = new Date().getFullYear();
@@ -21,7 +22,9 @@ export default function Footer() {
           <p className="text-sm text-gray-500 dark:text-gray-400">
             © {year} All rights reserved.
           </p>
-
+          
+          <VisitorCounter />
+          
         </div>
       </Container>
     </footer>
