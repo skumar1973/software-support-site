@@ -7,7 +7,7 @@ export default function VisitorCounter() {
 
   useEffect(() => {
     // Prevent counting the same browser session more than once
-    const alreadyCounted = sessionStorage.getItem("first-counter-5397");
+    const alreadyCounted = sessionStorage.getItem("visitor-counter");
 
     if (alreadyCounted) {
       return;
@@ -27,7 +27,7 @@ export default function VisitorCounter() {
         const data = await response.json();
 
         if (data.success) {
-          sessionStorage.setItem("first-counter-5397", "true");
+          sessionStorage.setItem("visitor-counter", "true");
           setVisitors(data.visitors);
         }
       } catch (error) {

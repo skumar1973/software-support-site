@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <>
+    <div>
       <Hero />
 
       {/* Core offerings */}
@@ -101,6 +101,6 @@ export default function Home() {
           </div>
         </Container>
       </section>
-    </>
+    </div>
   );
 }
