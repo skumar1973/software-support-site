@@ -1,49 +1,72 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { signInAnonymously } from "firebase/auth";
+import {
+  doc,
+  getDoc,
+  runTransaction,
+  setDoc,
+} from "firebase/firestore";
+
+import { auth, db } from "@/lib/firebase";
 
 export default function VisitorCounter() {
-  const [visitors, setVisitors] = useState<number | null>(null);
+  const [count, setCount] = useState<number | null>(null);
 
   useEffect(() => {
-    // Prevent counting the same browser session more than once
-    const alreadyCounted = sessionStorage.getItem("visitor-counter");
+    let cancelled = false;
 
-    if (alreadyCounted) {
-      return;
-    }
-
-    const updateVisitorCount = async () => {
+    async function countVisitor() {
       try {
-        const response = await fetch("/api/visitor", {
-          method: "GET",
-          cache: "no-store",
-        });
+        const userCredential = await signInAnonymously(auth);
+        const visitorId = userCredential.user.uid;
+        const visitorRef = doc(db, "visitors", visitorId);
+        const counterRef = doc(db, "counters", "website");
+        const alreadyCounted = await getDoc(visitorRef);
+        if (!alreadyCounted.exists()) {
+                  console.log('not alreadyCounted.exists(): ');
+          await runTransaction(db, async (transaction) => {
+            const counterSnapshot = await transaction.get(counterRef);
 
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
+            const currentCount = counterSnapshot.exists()
+              ? Number(counterSnapshot.data().count ?? 0)
+              : 0;
+            transaction.set(
+              counterRef,
+              {
+                count: currentCount + 1,
+              },
+              { merge: true }
+            );
+
+            transaction.set(visitorRef, {
+              countedAt: new Date(),
+            });
+          });
         }
-
-        const data = await response.json();
-
-        if (data.success) {
-          sessionStorage.setItem("visitor-counter", "true");
-          setVisitors(data.visitors);
+        const counterSnapshot = await getDoc(counterRef);
+        if (!cancelled && counterSnapshot.exists()) {
+          setCount(Number(counterSnapshot.data().count ?? 0));
         }
       } catch (error) {
         console.error("Visitor counter error:", error);
       }
-    };
+    }
 
-    updateVisitorCount();
+    countVisitor();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
-    <span className="text-sm text-gray-500 dark:text-gray-400">
+    <div className="text-sm text-slate-500 dark:text-slate-400">
       Visitors:{" "}
-      <span className="font-semibold">
-        {visitors !== null ? visitors.toLocaleString() : "..."}
+      <span className="font-semibold text-slate-700 dark:text-slate-200">
+        {count ?? "..."}
       </span>
-    </span>
+    </div>
   );
 }
